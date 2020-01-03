@@ -4,9 +4,9 @@
     <img src="img/logo.svg" class="logo-main">
     <br><br>
     {% if len == 1 %}
-    <h1 class="font-weight-bold">Hi, {{ name }}. You have {{ len }} pending package.</h1>
+    <h1 class="font-weight-bold day">Hi, {% if type %}<span class="text-red">{{ type }}</span> {% endif %} {{ name }}. You have <span class="text-red">{{ len }}</span>  pending package.</h1>
     {% else %}
-    <h1 class="font-weight-bold">Hi, {{ name }}. You have {{ len }} pending packages.</h1>
+    <h1 class="font-weight-bold day">Hi, {% if type %}<span class="text-red">{{ type }}</span> {% endif %} {{ name }}. You have <span class="text-red">{{ len }}</span> pending packages.</h1>
     {% endif %}
     <br><br>
     <div class="col">
@@ -16,7 +16,7 @@
 <div class="container text-center py-4">
     <a data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false"
        aria-controls="collapseExample">
-        <img src="img/add-icon.svg" style="width: 5vw">
+        <img class="spin" src="img/add-icon.svg" style="width: 5vw">
     </a>
     <br>
     <div class="collapse py-4" id="collapseExample">
@@ -29,9 +29,18 @@
                     <div class="row row-center-vertical" style="height: 33%">
                         <img class="py-2" src="img/sticker-box-icon.svg" style="height: 100%">
                     </div>
+                    {% if type == 'Club Leader' or type == 'Node Master' %}
                     <div class="row row-center-vertical" style="height: 33%">
                         <a href="/edit?type=sticker_box&new=true" class="button-red" style="">Request</a>
                     </div>
+                    {% else %}
+                    <div class="row row-center-vertical" style="height: 33%">
+                        <div class="text-center px-4" data-toggle="tooltip"
+                             title="Only available for leaders.">
+                            <a href="" class="button-red btn disabled" style="">Request</a>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             <div class="col py-3" style="height: 50vh">
@@ -95,7 +104,7 @@
             <div class="col py-3" style="height: 50vh">
                 <div class="card-red-outline" style="height: 100%">
                     <div class="row row-center-vertical" style="height: 33%">
-                        <h2 class="text-red font-weight-bold">???</h2>
+                        <h3 class="text-red font-weight-bold">Character Not Unlocked</h3>
                     </div>
                     <div class="row row-center-vertical" style="height: 33%">
                         <img class="py-2" src="img/question-mark.svg" style="height: 100%">
@@ -117,7 +126,7 @@
                 <h2 class="text-white" style="padding-right: 40%">Package #{{ package.package}}</h2>
                 <p>
                     {% for label, class in package.labels %}
-                    <span class="label-{{ class }} px-4">{{ label }}</span>
+                    <span class="label-{{ class }} px-3">{{ label }}</span>
                     {% endfor %}
                 </p>
                 <br>
@@ -175,6 +184,22 @@
                 <p class="text-white">
                     {{ package.date_ordered }}
                 </p>
+                {% if package.date_shipped %}
+                <h6 class="text-white font-weight-bold">
+                    Date Shipped
+                </h6>
+                <p class="text-white">
+                    {{ package.date_shipped }}
+                </p>
+                {% endif %}
+                {% if package.date_arrived %}
+                <h6 class="text-white font-weight-bold">
+                    Date Arrived
+                </h6>
+                <p class="text-white">
+                    {{ package.date_arrived }}
+                </p>
+                {% endif %}
                 {% if package.note %}
                 <h6 class="text-white font-weight-bold">
                     Note
@@ -213,10 +238,19 @@
         </div>
     </div>
     {% if packages|length > 1 %}
-    <hr>
+    <hr class="day">
     {% endif %}
     {% endfor %}
     {% else %}
     {% endif %}
 </div>
+<script>
+    $( ".spin" ).click(function() {
+        if (  $( this ).css( "transform" ) == 'none' ){
+            $(this).css("transform","rotate(90deg)");
+        } else {
+            $(this).css("transform","" );
+        }
+    });
+</script>
 {% endblock %}

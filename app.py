@@ -50,8 +50,12 @@ airtable_key = os.getenv('AIRTABLE_KEY')
 
 @app.route("/")
 def index():
+    setTheme(request.args)
     if 'id' not in session:
-        return render_template("index.html")
+        if 'theme' not in session:
+            return render_template("index.html", dark='day')
+        else:
+            return render_template("index.html", dark=session['theme'])
     else:
         return redirect("/user")
 
@@ -81,7 +85,8 @@ def move_completed_packages_down(packages: list):
             packages.remove(package)
             packages.append(package)
 
-def convertLabelNameToArray(label:str):
+
+def convertLabelNameToArray(label: str):
     label_array = []
     if 'sticker' in label.lower():
         # Append sticker label
@@ -99,25 +104,30 @@ def convertLabelNameToArray(label:str):
             label_array.append((label, label.replace(" ", "-")))
     return label_array
 
+
 @app.route('/edit', methods=['GET', 'POST'])
 def edit():
+    setTheme(request.args)
     isNew = 'new' in request.args and request.args['new'] == 'true'
     if isNew:
+        if not airtable.isLeader(session['id']) and not airtable.is_node_master(session['id']):
+            return redirect('/user')
         type = request.args['type'] if 'type' in request.args else ''
         scenario = airtable.getMailScenario(type, slack_id=session['id'])
         scenario['date_ordered'] = datetime.date.today().strftime("%b. %d, %Y")
         scenario['status'] = 'PAP'
+        scenario['type'] = scenario['labels']
         scenario['labels'] = convertLabelNameToArray(scenario['labels'])
         form = recipientForm()
         if form.validate_on_submit():
-                note = form.note.data
-                observer = slack.WebClient(token=auth_token)
-                observer.chat_postMessage(
-                    channel="GNTFDNEF8",
-                    text="<@UNRAW3K7F> test " + type + " <@" + session['id'] + "> " + note
-                )
-                return redirect('/user')
-        return render_template("recipient_edit.html", package=scenario, name=session['name'], form=form)
+            note = form.note.data
+            observer = slack.WebClient(token=auth_token)
+            observer.chat_postMessage(
+                channel="GNTFDNEF8",
+                text="<@UNRAW3K7F> test " + type + " <@" + session['id'] + "> " + note
+            )
+            return redirect('/user')
+        return render_template("recipient_edit.html", package=scenario, name=session['name'], form=form, dark=session['theme'])
 
 
 def login(auth_code):
@@ -134,31 +144,43 @@ def login(auth_code):
     session['id'] = user_slack_id
     session['name'] = user_name
 
+
 @app.route('/user', methods=["GET", "POST"])
 def user():
-    if 'id' not in session:
-        if 'code' not in request.args:
-            return redirect("/")
-        # Retrieve the auth code from the request params
-        auth_code = request.args['code']
-        login(auth_code)
+    setTheme(request.args)
+    if 'code' in request.args:
+        if 'id' in session:
+            return redirect('/user')
+        else:
+            auth_code = request.args['code']
+            login(auth_code)
+            return redirect('/user')
     packages = []
     num_of_packages = 0
-    is_nm = airtable.is_node_master(session['id'])
+    type = ''
+    if airtable.is_node_master(session['id']):
+        type = 'Node Master'
+    elif airtable.isLeader(session['id']):
+        type = 'Club Leader'
     packages = airtable.getPackages(session['id'])
     packages.sort(key=sort_by_date_ordered)
     move_completed_packages_down(packages)
     for package in packages:
         package['node_master'] = getNameFromId(package['node_master'])
-        package['note'] = package['note'].replace("\n", "<br>")
         package['contents'] = package['contents'].replace("\n", "<br>")
         if package['status'] != 'A' and package['status'] != 'NAP':
             num_of_packages += 1
         package['labels'] = convertLabelNameToArray(package['labels'])
-        package['date_ordered'] = datetime.datetime.strptime(package['date_ordered'], '%Y-%m-%dT%H:%M:%S.%fZ').strftime(
-            "%b. %d, %Y")
+        package['date_ordered'] = convertToDateString(package['date_ordered'])
+        package['date_shipped'] = '' if package['date_shipped'] == '' else convertToDateString(package['date_shipped'])
+        package['date_arrived'] = '' if package['date_arrived'] == '' else convertToDateString(package['date_arrived'])
 
-    return render_template("statuslist.html", packages=packages, name=session['name'], len=num_of_packages)
+    return render_template("statuslist.html", packages=packages, name=session['name'], len=num_of_packages, type=type, dark=session['theme'])
+
+
+def convertToDateString(date):
+    return datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%fZ').strftime(
+        "%b. %d, %Y")
 
 
 @app.route('/logout')
@@ -174,3 +196,10 @@ def getNameFromId(id):
         return observer.users_info(user=id)['user']['real_name']
     except:
         return "No Node Master found."
+
+
+def setTheme(args):
+    if 'dark' in args:
+        session['theme'] = 'night' if args['dark'] == 'true' else 'day'
+    elif 'theme' not in session:
+        session['theme'] = 'day'

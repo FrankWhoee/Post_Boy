@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>post_boy</title>
+    <title>post_boy – Hack Club</title>
     <meta name="slack-app-id" content="AS3DSU4DV">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
     <link rel="icon" href="img/icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link href="https://fonts.googleapis.com/css?family=Kulim+Park&display=swap" rel="stylesheet">
@@ -13,17 +15,27 @@
     <link rel="stylesheet" href="static/vanillaSelectBox.css">
     <script src="js/vanillaSelectBox.js"></script>
 </head>
-<body>
+<body class="day">
 <div id="content">{% block content %}{% endblock %}</div>
+<div style="position: absolute; top: 20px; right: 30px;">
+    {% if dark == 'night' %}
+    <img class="hop" id="themeIdentifier" src="img/moon-icon-outline.svg">
+    {% else %}
+    <img class="hop" id="themeIdentifier" src="img/sun-icon.svg">
+    {% endif %}
+</div>
 <div class="container text-center py-3">
-    <p style="font-weight: bold">
-        Made with 🖤 by @frank <img href="frankwhoee.codes" src="img/spacelogo.png" style="height: 2vh;border-radius: 3px">
+    <p class="font-weight-bold day">
+        Made with 🖤 by <a class="light" href="https://frankwhoee.codes">@frank <img src="img/spacelogo.png"
+                                                                                     style="height: 2vh;border-radius: 3px"></a>
     </p>
-    <p>
+    <p class="day">
         Having problems with post_boy? <br><br>
         <a class="button-red" href="https://hackclub.slack.com/archives/DJ98650F8">Ask Frank</a>
     </p>
+    <a href="https://github.com/hackclub/Post_Boy"><img class="github-icon" src="img/github-icon.svg"></a>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
         crossorigin="anonymous"></script>
@@ -33,6 +45,84 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
         integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
         crossorigin="anonymous"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+    checkAndTheme()
+    $('.hop').click(function () {
+        var animTimeline = anime.timeline()
+            .add({
+                targets: this,
+                translateY: -50,
+                scale: 0,
+                complete: toggleIcon($(this))
+            })
+            .add({
+                targets: this,
+                translateY: 50,
+                scale: 0
+            })
+            .add({
+                targets: this,
+                translateY: 0,
+                scale: 1
+            }).finished.then(checkAndTheme);
+    });
+
+    function toggleIcon($elem) {
+        if ($elem.attr('src').includes("img/sun-icon.svg")) {
+            $elem.attr('src', "img/moon-icon-outline.svg");
+        } else {
+            $elem.attr('src', "img/sun-icon.svg");
+        }
+    }
+
+    function checkAndTheme() {
+        if ($("#themeIdentifier").attr('src').includes("img/sun-icon.svg")) {
+            $('.night').each(function () {
+                $(this).addClass("day");
+                $(this).removeClass("night");
+            });
+            $('.logo-main').each(function () {
+                $(this).attr("src", "img/logo.svg")
+            });
+            $('.github-icon').each(function () {
+                $(this).attr("src", "img/github-icon.svg")
+            });
+            if (location.href.includes("?dark=true")) {
+                location.href = location.href.replace("dark=true", "dark=false");
+            } else if (!location.href.includes("dark")) {
+                if (location.href.includes("?")) {
+                    location.href = location.href + "&dark=false";
+                } else {
+                    location.href = location.href + "?dark=false";
+                }
+            }
+        } else {
+            $('.day').each(function () {
+                $(this).addClass("night");
+                $(this).removeClass("day");
+            });
+            $('.logo-main').each(function () {
+                $(this).attr("src", "img/logo-light.svg")
+            });
+            $('.github-icon').each(function () {
+                $(this).attr("src", "img/github-icon-light.svg")
+            });
+            console.log("Switch complete. Redirecting URL to save dark=true")
+            if (location.href.includes("?dark=false")) {
+                location.href = location.href.replace("dark=false", "dark=true")
+            } else if (!location.href.includes("dark")) {
+                if (location.href.includes("?")) {
+                    location.href = location.href + "&dark=true";
+                } else {
+                    location.href = location.href + "?dark=true";
+                }
+            }
+        }
+    }
+</script>
 </body>
 </html>
